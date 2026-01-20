@@ -7,11 +7,10 @@ FROM alpine:3.20 AS builder
 ARG SRTLA_BRANCH
 WORKDIR /tmp
 
-# Instalamos dependencias básicas
 RUN apk update && apk add --no-cache \
     linux-headers alpine-sdk cmake tcl openssl-dev zlib-dev spdlog spdlog-dev git
 
-# CLONAR Y ACTUALIZAR SUBMODULOS (Esto arregla el error de argparse)
+# Clonar y compilar con submodulos corregidos
 RUN git clone -b ${SRTLA_BRANCH} https://github.com/OpenIRL/srtla.git srtla \
     && cd srtla \
     && git submodule update --init --recursive \
@@ -24,15 +23,18 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib64
 
 RUN apk update && apk add --no-cache openssl libstdc++ supervisor spdlog && rm -rf /var/cache/apk/*
 
-# Traemos el binario compilado
-COPY --from=builder /tmp/srtla/srtla_rec /usr/local/bin/
+# Crear usuarios
+RUN adduser -D -u 3001 -s /bin/sh sls \
+    && adduser -D -u 3002 -s /bin/sh srtla
 
-# Traemos los componentes de SLS
+# Copiar binarios
+COPY --from=builder /tmp/srtla/srtla_rec /usr/local/bin/
 COPY --from=ghcr.io/openirl/srt-live-server:latest /usr/local/bin/* /usr/local/bin/
 COPY --from=ghcr.io/openirl/srt-live-server:latest /usr/local/lib/libsrt* /usr/local/lib/
 
-# Configuraciones
-COPY --chmod=755 bin/logprefix /bin/logprefix
+# Configuración de archivos y permisos (Corregido para srv-adrian)
+COPY bin/logprefix /bin/logprefix
+RUN chmod 755 /bin/logprefix
 COPY conf/sls.conf /etc/sls/sls.conf
 COPY conf/supervisord.conf /etc/supervisord.conf
 
