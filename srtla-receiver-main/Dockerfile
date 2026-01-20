@@ -21,7 +21,7 @@ RUN git clone -b ${SRTLA_BRANCH} https://github.com/OpenIRL/srtla.git srtla \
 FROM alpine:3.20
 ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib64
 
-RUN apk update && apk add --no-cache openssl libstdc++ supervisor spdlog && rm -rf /var/cache/apk/*
+RUN apk update && apk add --no-cache openssl libstdc++ supervisor spdlog perl && rm -rf /var/cache/apk/*
 
 # Crear usuarios
 RUN adduser -D -u 3001 -s /bin/sh sls \
